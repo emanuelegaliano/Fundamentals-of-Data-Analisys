@@ -374,3 +374,84 @@ H_0: \text{Tutte le variabili indipendenti non hanno effetto su } Y \Leftrightar
 \[
 H_a: \text{Almeno una variabile indipendente ha un effetto su } Y \Leftrightarrow \exists i : \beta_i \neq 0
 \]
+
+\subsection{Eliminazione backward delle variabili}
+L'eliminazione backward è una tecnica di selezione delle variabili utilizzata nella regressione lineare multivariata per identificare un sottoinsieme ottimale di variabili indipendenti da includere nel modello. Questo metodo inizia con un modello completo che include tutte le variabili indipendenti disponibili e procede rimuovendo iterativamente le variabili meno significative fino a quando non si raggiunge un criterio di arresto predefinito. In particolare, si elimina quella variabile il cui valore p associato al test t è il più alto (quindi la meno significativa) e si ripete il processo finché tutte le variabili rimanenti sono statisticamente significative secondo una soglia di significatività scelta (ad esempio, 0.05).
+
+\subsection{Colinearità e instabilità di OLS}
+\begin{nicequote}
+    La colinearità si verifica quando due o più variabili indipendenti in un modello di regressione lineare sono altamente correlate tra loro. Questo può portare a problemi nell'interpretazione dei coefficienti di regressione e a instabilità nelle stime dei coefficienti stessi. In presenza di colinearità, le stime dei coefficienti possono diventare molto sensibili a piccole variazioni nei dati, rendendo difficile determinare l'effetto individuale di ciascuna variabile indipendente sulla variabile dipendente. Inoltre, la colinearità può aumentare lo standard error delle stime dei coefficienti, riducendo la precisione delle stime e rendendo più difficile rilevare relazioni significative tra le variabili indipendenti e la variabile dipendente.
+\end{nicequote}
+
+\noindent
+Prendiamo per esempio la soluzione di OLS per i coefficienti stimati:
+\[
+\hat{\boldsymbol{\beta}} = (X^T X)^{-1} X^T Y
+\]
+
+Se due o più variabili indipendenti sono altamente correlate, la matrice \(X^T X\) può diventare prossima alla \textbf{singolarità}, ovvero una matrice non invertibile poiché le righe sono linearmente \emph{dipendenti} e non è applicabile il teorema della matrice inversa\footnote{Il teorema della matrice inversa afferma che una matrice quadrata è invertibile se e solo se ha rango massimo, ovvero il rango è uguale alla dimensione della matrice.}, rendendo il calcolo dell'inversa numericamente instabile. Questo può portare a stime dei coefficienti che variano notevolmente con piccole modifiche nei dati, rendendo difficile interpretare i risultati del modello di regressione.
+
+Da qui, nasce il problema su OLS: in presenza di colinearità, le stime dei coefficienti possono essere instabili e poco affidabili. Per affrontare questo problema si può fare la computazione della matrice \textbf{pseudo-inversa} di Moore-Penrose \((X^TX)^+\), che permette di calcolare una soluzione approssimata anche quando la matrice non è invertibile. Tuttavia, questa soluzione può ancora essere sensibile alla colinearità e potrebbe non fornire stime affidabili dei coefficienti.
+
+\subsection{Adjusted $\mathbf{R^2}$} 
+Nel caso della regressione lineare semplice $R^2 = \pi(x, y)^2$ (con $\pi$ coefficiente di correlazione di Pearson). Nel caso della multivariata, si può scrivere come:
+\[
+R^2 = \pi(Y, \hat{Y})^2
+\]
+dove \(\hat{Y}\) sono i valori predetti dal modello di regressione. Tuttavia, un problema con \(R^2\) nella regressione multivariata è che tende ad aumentare con l'aggiunta di più variabili indipendenti, anche se queste variabili non migliorano realmente il modello. Per affrontare questo problema, si utilizza una versione modificata di \(R^2\) chiamata \textbf{Adjusted \(R^2\)} (o \(R^2\) aggiustato), che tiene conto del numero di variabili indipendenti nel modello. Da notare che anche questo è un problema di \textbf{bias-varianza trade-off}, in quanto aggiungere più variabili riduce il bias ma aumenta la varianza.
+
+Si può esprimere come:
+\[
+\bar{R}^2 = 1 - \left(1 - R^2\right) \frac{m - 1}{m - p - 1}
+\]
+dove \(m\) è il numero di osservazioni e \(p\) è il numero di variabili indipendenti nel modello. L'Adjusted \(R^2\) penalizza l'aggiunta di variabili indipendenti che non migliorano significativamente il modello, fornendo una misura più accurata della bontà del modello in presenza di più variabili indipendenti.
+
+\section{Predittori qualitativi}
+In molti casi, le variabili indipendenti in un modello di regressione possono essere di natura qualitativa (categorica) piuttosto che quantitativa (numerica). Ad esempio, una variabile qualitativa potrebbe rappresentare il genere (maschio/femmina), il colore (rosso/blu/verde) o la categoria di un prodotto (A/B/C). Per includere queste variabili qualitative in un modello di regressione lineare, è necessario convertirle in una forma numerica.
+
+\subsection{Variabili dummy}
+Un metodo comune per includere variabili qualitative in un modello di regressione è l'uso di \textbf{variabili dummy}. Le variabili dummy sono variabili binarie (0 o 1) che indicano la presenza o l'assenza di una particolare categoria di una variabile qualitativa. Per una variabile qualitativa con \(k\) categorie, si creano \(k-1\) variabili dummy, dove ciascuna variabile dummy rappresenta una categoria specifica, e la categoria rimanente viene utilizzata come categoria di riferimento (baseline). Continiuamo l'esempio del dataset \ref{tab:car_dataset} e supponiamo di voler introdurre la variabile qualitativa:
+\[
+\text{fuel\_type[T.gas]} = 
+\begin{cases}
+1 & \text{se il tipo di carburante è gas} \\
+0 & \text{altrimenti}
+\end{cases}
+\]
+da questo poi fittiamo il modello:
+\[
+mpg = \beta_0 + \beta_1 \cdot \text{horsepower} + \beta_2 \cdot \text{fuel\_type[T.gas]} + \epsilon
+\]
+ottenendo i seguenti risultati:
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrrrr}
+\hline
+ & coef & std err & t & P$>|t|$ & [0.025 & 0.975] \\
+\hline
+Intercept       & 41.2379  & 1.039 & 39.705  & 0.000 & 39.190 & 43.286 \\
+fueltype[T.gas] & -2.7658  & 0.918 & -3.013  & 0.003 & -4.576 & -0.956 \\
+horsepower      & -0.1295  & 0.007 & -18.758 & 0.000 & -0.143 & -0.116 \\
+\hline
+\end{tabular}
+\caption{Risultati della regressione}
+\end{table}
+Da qui si può notare come il coefficiente associato alla variabile dummy \textit{fuel\_type[T.gas]} sia negativo, suggerendo che, a parità di \textit{horsepower}, le automobili che utilizzano gas come carburante tendono ad avere un valore di \textit{mpg} inferiore rispetto a quelle che utilizzano altri tipi di carburante (categoria di riferimento). Inoltre, il valore p associato a questo coefficiente è inferiore a 0.05, indicando che l'effetto del tipo di carburante sulla variabile dipendente è statisticamente significativo.
+
+\paragraph{Predittori con più di due categorie}
+Considerato un predittore a $n$ categorie, si possono creare $n-1$ variabili dummy per rappresentare le categorie. Per esempio, si potrebbe avere una variabile qualitativa \textit{color} con tre categorie: rosso, blu e verde. Si possono creare due variabili dummy:
+\[
+\text{color\_red} = 
+\begin{cases}
+1 & \text{se il colore è rosso} \\
+0 & \text{altrimenti}
+\end{cases}
+\]
+\[
+\text{color\_blue} = 
+\begin{cases}
+1 & \text{se il colore è blu} \\
+0 & \text{altrimenti}
+\end{cases}
+\]
+La categoria verde viene utilizzata come categoria di riferimento. Includendo queste variabili dummy in un modello di regressione, si può valutare l'effetto di ciascun colore sulla variabile dipendente rispetto alla categoria di riferimento (verde).
